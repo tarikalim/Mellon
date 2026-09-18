@@ -14,7 +14,7 @@ open it ("damaged"). The install script fetches the latest release, puts it in
 `/Applications` and clears that flag:
 
 ```sh
-./tools/install-release.sh          # needs the gh CLI, since the repo is private
+./tools/install-release.sh          
 ```
 
 Or do it by hand: download `envhub-macos-arm64.tar.gz` from
