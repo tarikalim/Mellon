@@ -66,6 +66,19 @@ Both are optional and `:`-separated like `PATH`. envhub writes this file, commen
 ready to edit, the first time it runs; the `config` button in the toolbar opens it in
 `$EDITOR`, and `↻ rescan` reloads it.
 
+## MCP for agents
+
+`envhub mcp` is an MCP server on stdio. Agents can list keys and run a command with chosen keys
+set as environment variables, without the values ever showing in their context:
+
+```sh
+claude mcp add -s user envhub -- /Applications/envhub.app/Contents/MacOS/envhub mcp
+```
+
+- `list_keys(query?)` lists `repo:KEY`, never values.
+- `run_with_env(command, keys, cwd?)` runs `sh -c command` with the keys set (`KEY`, or `repo:KEY`
+  when repos disagree). Values that show up in the output are masked as `***KEY***`; encoded forms are not.
+
 ## Layout
 
 ```
@@ -73,6 +86,7 @@ src/main.rs     window setup
 src/app.rs      the egui interface
 src/config.rs   search roots and skip lists
 src/store.rs    parsing, scanning and writing .env files
+src/mcp.rs      the `envhub mcp` server for agents
 tools/          icon generator, macOS install script
 ```
 

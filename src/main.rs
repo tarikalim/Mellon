@@ -2,6 +2,7 @@
 
 mod app;
 mod config;
+mod mcp;
 mod store;
 
 use eframe::egui;
@@ -10,6 +11,10 @@ const ICON: &[u8] = include_bytes!("../assets/icon.rgba");
 const ICON_SIZE: u32 = 256;
 
 fn main() -> eframe::Result<()> {
+    if std::env::args().nth(1).as_deref() == Some("mcp") {
+        mcp::serve().expect("stdio closed");
+        return Ok(());
+    }
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("envhub")
