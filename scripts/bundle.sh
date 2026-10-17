@@ -1,7 +1,8 @@
 #!/bin/sh
 # Build release and install "/Applications/Mellon.app".
 # scripts/bundle.sh <binary> <out dir> packages a prebuilt binary without installing.
-# Icon: assets/icon.svg is the source; assets/AppIcon.icns and assets/mellon.png are rendered from it.
+# Icon: assets/icon.svg is the source; scripts/render-icon.swift renders it, and AppIcon.icns and
+# mellon.png are made from that (iconutil, sips).
 # The app's binary is the only one: Claude Code's MCP entry runs it too, so one bundle updates both.
 set -e
 cd "$(dirname "$0")/.."
