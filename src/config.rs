@@ -148,8 +148,10 @@ mod tests {
 
     #[test]
     fn parses_roots_and_skips() {
-        let cfg =
-            Config::parse("# comment\nMELLON_ROOTS=~/code : /tmp/x\nMELLON_SKIP=dist:backup\n");
+        let sep = if cfg!(windows) { ';' } else { ':' };
+        let cfg = Config::parse(&format!(
+            "# comment\nMELLON_ROOTS=~/code {sep} /tmp/x\nMELLON_SKIP=dist{sep}backup\n"
+        ));
         assert_eq!(
             cfg.roots,
             vec![home().join("code"), PathBuf::from("/tmp/x")]
