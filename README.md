@@ -1,12 +1,10 @@
 # Mellon
 
-A native macOS app that finds every `KEY=VALUE` in the `.env` files across your Mac, so you can search them, copy one with a click and edit it in place, without opening ten repos to find the one secret someone just asked you for. Written in Rust with [GPUI](https://www.gpui.rs/). Values stay in your `.env` files exactly as they are; the app only reads and writes those files.
+A native macOS app that finds every `KEY=VALUE` in the `.env` files across your Mac, so you can search them, copy one with a click and edit it in place, without opening ten repos to find the one secret someone just asked you for. Written in Rust with [GPUI](https://www.gpui.rs/). Values stay in your `.env` files exactly as they are; the app only reads and writes those files. Built for local development convenience, not for security.
 
-The name is the password to the Doors of Durin: *speak, friend, and enter*. Mellon is Sindarin for "friend".
+The name is Tolkien's *mellon*, Elvish for friend: the word that opens the Doors of Durin, for those who know to say it.
 
-Built for local development convenience, not for security.
-
-## What it does
+## What it shows
 
 - **Search**: filters by key or folder; terms are ANDed (`stripe key`). **Values** makes it look inside values too, so `localhost:5432` finds every key that points at that database.
 - **Folders**: the sidebar lists every directory that has env files, with key counts. Click one to scope the list to it, or **All folders** to search everything.
@@ -16,9 +14,10 @@ Built for local development convenience, not for security.
 - **Edit**: inline editing. Click a row, type, and press Enter or click away; only that one line of the file is rewritten. Off by default, so nothing changes by accident.
 - **New key** (+): adds a key that belongs to no folder, to `~/.config/mellon/scratch.env`.
 - **Rescan** (↻) reads the folders and the config again; the gear opens the config.
-- **Theme** (palette icon): every theme in Zed's theme files. The default is the Zed theme *Islands iTerm*, as in Ithildin and Redbook; the choice is kept in `~/.config/mellon/theme`.
 
-## Config
+The default theme is the Zed theme *Islands iTerm*; the palette icon lists every theme in Zed's theme files.
+
+## Getting data in
 
 `~/.config/mellon/.env` (or `$XDG_CONFIG_HOME/mellon/.env`), an env file like any other:
 
@@ -31,7 +30,7 @@ Both are optional and `:`-separated like `PATH`. Mellon writes this file, commen
 
 Coming from envhub: `~/.config/envhub` is moved here on first run, and its `ENVHUB_ROOTS` and `ENVHUB_SKIP` keys are still read.
 
-## MCP
+### MCP
 
 `mellon mcp` lets agents use a value without seeing it. Tool results are text.
 
