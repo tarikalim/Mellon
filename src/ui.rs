@@ -276,10 +276,14 @@ impl Mellon {
         }
     }
 
+    /// In the Mac's default text editor: an app opened from Finder has no `$EDITOR`.
     fn open_path(&mut self, path: &std::path::Path, cx: &mut Context<Self>) {
-        let editor = std::env::var("EDITOR").unwrap_or_else(|_| "open".to_owned());
-        if let Err(err) = std::process::Command::new(&editor).arg(path).spawn() {
-            self.status = format!("Could not run {editor}: {err}");
+        let opened = std::process::Command::new("open")
+            .arg("-t")
+            .arg(path)
+            .status();
+        if !opened.is_ok_and(|s| s.success()) {
+            self.status = format!("Could not open {}", path.display());
             cx.notify();
         }
     }
@@ -656,7 +660,7 @@ impl Mellon {
                             .icon(IconName::ExternalLink)
                             .ghost()
                             .xsmall()
-                            .tooltip("Open the file in $EDITOR")
+                            .tooltip("Open the file in the default text editor")
                             .on_click(cx.listener(move |this, _, _, cx| {
                                 cx.stop_propagation();
                                 let file = this.entries[index].file.clone();

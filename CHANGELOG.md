@@ -16,7 +16,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
   Redbook: a folder sidebar, one row per key with key, folder and value columns, a copy and an
   open button on every row, and toggles in the header.
 - Click anywhere on a row to copy its value; the copy button shows a check for a moment.
-- New app icon, drawn from `assets/icon.svg`.
+- New app icon, a silver M with a star on a graphite book, drawn from `assets/icon.svg`.
+- Open and the config button open the file in the Mac's default text editor (`open -t`): an app
+  opened from Finder has no `$EDITOR`.
 - Releases are a universal macOS `.dmg` and `.zip`; there is no Linux build any more.
 
 ### Removed

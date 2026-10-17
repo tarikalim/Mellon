@@ -16,14 +16,15 @@ exactly as they are, and the app only reads and writes those files.
 - **Folders** on the left lists every directory that has env files, with key counts. Click one to
   scope the list to it, or **All folders** to search everything.
 - **Click a row** to copy its value. Each row also has a copy button and an open button, which
-  opens the file in `$EDITOR`.
+  opens the file in the Mac's default
+  text editor (`open -t`).
 - **Reveal** unmasks values. **Values** also searches inside them.
 - **Commented** also lists keys commented out in the files (`# KEY=VALUE`), shown dimmed with a
   `#`. Editing one keeps it commented.
 - **Edit** turns on inline editing: click a row, type, and press Enter or click away. Only that
   one line of the file is rewritten. Off by default, so nothing changes by accident.
 - **+** adds a key that belongs to no folder; it goes to `~/.config/mellon/scratch.env`.
-- **↻** rescans the folders and reloads the config; the gear opens the config in `$EDITOR`.
+- **↻** rescans the folders and reloads the config; the gear opens the config the same way.
 - **Theme** (palette icon) lists every theme in Zed's theme files; the default is *Islands
   iTerm*, as in Ithildin and Redbook. The choice is kept in `~/.config/mellon/theme`.
 
