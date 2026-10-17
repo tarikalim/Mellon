@@ -1,33 +1,22 @@
 # Mellon
 
-A native macOS app that finds every `KEY=VALUE` in the `.env` files across your Mac, so you can
-search them, copy one with a click and edit it in place, without opening ten repos to find the
-one secret someone just asked you for. Written in Rust with [GPUI](https://www.gpui.rs/).
+A native macOS app that finds every `KEY=VALUE` in the `.env` files across your Mac, so you can search them, copy one with a click and edit it in place, without opening ten repos to find the one secret someone just asked you for. Written in Rust with [GPUI](https://www.gpui.rs/). Values stay in your `.env` files exactly as they are; the app only reads and writes those files.
 
-The name is the password to the Doors of Durin: *speak, friend, and enter*. Mellon is Sindarin
-for "friend".
+The name is the password to the Doors of Durin: *speak, friend, and enter*. Mellon is Sindarin for "friend".
 
-Built for local development convenience, not for security: values stay in your `.env` files
-exactly as they are, and the app only reads and writes those files.
+Built for local development convenience, not for security.
 
-## Use
+## What it does
 
-- **Search** filters by key or folder; terms are ANDed (`stripe key`).
-- **Folders** on the left lists every directory that has env files, with key counts. Click one to
-  scope the list to it, or **All folders** to search everything.
-- **Click a row** to copy its value. Each row also has a copy button and an open button, which
-  opens the file in the Mac's default
-  text editor (`open -t`).
-- **Reveal** unmasks every value; the eye on a row shows or hides just that one. **Values**
-  makes the search look inside values too, not only keys and folders.
-- **Commented** also lists keys commented out in the files (`# KEY=VALUE`), shown dimmed with a
-  `#`. Editing one keeps it commented.
-- **Edit** turns on inline editing: click a row, type, and press Enter or click away. Only that
-  one line of the file is rewritten. Off by default, so nothing changes by accident.
-- **+** adds a key that belongs to no folder; it goes to `~/.config/mellon/scratch.env`.
-- **↻** rescans the folders and reloads the config; the gear opens the config the same way.
-- **Theme** (palette icon) lists every theme in Zed's theme files; the default is *Islands
-  iTerm*, as in Ithildin and Redbook. The choice is kept in `~/.config/mellon/theme`.
+- **Search**: filters by key or folder; terms are ANDed (`stripe key`). **Values** makes it look inside values too, so `localhost:5432` finds every key that points at that database.
+- **Folders**: the sidebar lists every directory that has env files, with key counts. Click one to scope the list to it, or **All folders** to search everything.
+- **Copy**: click a row to copy its value. Every row also has an eye that shows or hides just that value, a copy button, and an open button that opens the file in the Mac's default text editor (`open -t`).
+- **Reveal**: unmasks every value at once and resets the per-row eyes.
+- **Commented**: also lists keys commented out in the files (`# KEY=VALUE`), dimmed with a `#`. Editing one keeps it commented.
+- **Edit**: inline editing. Click a row, type, and press Enter or click away; only that one line of the file is rewritten. Off by default, so nothing changes by accident.
+- **New key** (+): adds a key that belongs to no folder, to `~/.config/mellon/scratch.env`.
+- **Rescan** (↻) reads the folders and the config again; the gear opens the config.
+- **Theme** (palette icon): every theme in Zed's theme files. The default is the Zed theme *Islands iTerm*, as in Ithildin and Redbook; the choice is kept in `~/.config/mellon/theme`.
 
 ## Config
 
@@ -38,39 +27,41 @@ MELLON_ROOTS=~/code:~/work/backend   # folders to search; unset means $HOME
 MELLON_SKIP=dist:backup              # extra folder names to ignore
 ```
 
-Both are optional and `:`-separated like `PATH`. Mellon writes this file, commented out and ready
-to edit, the first time it runs. A pre-rename `~/.config/envhub` folder is moved here on first
-run, and its `ENVHUB_ROOTS` and `ENVHUB_SKIP` keys are still read.
+Both are optional and `:`-separated like `PATH`. Mellon writes this file, commented out and ready to edit, the first time it runs. `node_modules`, `.git`, `Library`, `target`, `.venv` and `.cache` are always skipped.
 
-## MCP for agents
+Coming from envhub: `~/.config/envhub` is moved here on first run, and its `ENVHUB_ROOTS` and `ENVHUB_SKIP` keys are still read.
 
-`mellon mcp` is an MCP server on stdio. Agents can list keys and run a command with chosen keys
-set as environment variables, without the values ever showing in their context:
+## MCP
 
-```sh
-claude mcp add --scope user mellon -- /Applications/Mellon.app/Contents/MacOS/mellon mcp
-```
+`mellon mcp` lets agents use a value without seeing it. Tool results are text.
 
-| Tool | What it does |
+| Tool | For |
 |---|---|
-| `list_keys(query?)` | Lists `repo:KEY`, never values |
-| `run_with_env(command, keys, cwd?)` | Runs `sh -c command` with the keys set (`KEY`, or `repo:KEY` when repos disagree). Values that show up in the output are masked as `***KEY***`; encoded forms are not |
+| `list_keys` | `repo:KEY` for every key matching `query` (terms ANDed over repo and key), never values |
+| `run_with_env` | Runs `sh -c command` with the chosen keys set as environment variables (`KEY`, or `repo:KEY` when files disagree). Values that show up in the output come back as `***KEY***`; encoded forms are not masked |
+
+The `mellon` skill ([skills/mellon](skills/mellon/SKILL.md)) explains both tools, what masking does not cover, and working recipes. It is served over the MCP Skills extension (`skills/list`, `skills/get`, `resources/read`).
 
 ## Install and run
 
 ### From a release
 
-```sh
-scripts/install-release.sh      # latest release into /Applications, quarantine flag cleared
-```
+1. Download `Mellon-<version>-macos-universal.dmg` from [Releases](../../releases). One build runs on Apple Silicon and Intel.
+2. Open it and drag **Mellon** to **Applications**.
+3. The app is signed ad hoc, not notarized, so macOS blocks its first launch. Either open **System Settings → Privacy & Security** and choose **Open Anyway** next to the Mellon message, or remove the download's quarantine flag once:
 
-Or by hand: download `Mellon-<version>-macos-universal.dmg` from [Releases](../../releases), drag
-**Mellon** to **Applications**, then clear the quarantine flag once, because the app is signed ad
-hoc, not notarized:
+   ```sh
+   xattr -dr com.apple.quarantine /Applications/Mellon.app
+   ```
 
-```sh
-xattr -dr com.apple.quarantine /Applications/Mellon.app
-```
+4. Optional, the command line and the MCP server for Claude Code:
+
+   ```sh
+   ln -sf /Applications/Mellon.app/Contents/MacOS/mellon ~/.local/bin/mellon
+   claude mcp add --scope user mellon -- /Applications/Mellon.app/Contents/MacOS/mellon mcp
+   ```
+
+The window lists every env file under your home folder. Narrow it with `MELLON_ROOTS` (gear icon).
 
 ### From source
 
@@ -80,11 +71,11 @@ Rust stable on macOS:
 scripts/bundle.sh          # builds release and installs /Applications/Mellon.app in place
 ```
 
-It also removes a pre-rename `envhub.app`.
+Then step 4 above. The script also removes a pre-rename `envhub.app`.
 
 ### Command line
 
-The app and the MCP server are one binary.
+The app, the CLI and the MCP server are one binary; `mellon` with no arguments opens the window.
 
 | Command | What it does |
 |---|---|
@@ -93,8 +84,7 @@ The app and the MCP server are one binary.
 
 ## Releases
 
-Pushing a `v*` tag runs `.github/workflows/release.yml`: tests, a universal build, and a release
-with the `.dmg` and `.zip`.
+Pushing a `v*` tag runs `.github/workflows/release.yml`: tests, a universal build, and a release with the `.dmg` and `.zip`.
 
 ## Contributing
 
@@ -102,4 +92,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Changes are listed in [CHANGELOG.md](CHA
 
 ## Licence
 
-[MIT](LICENSE).
+Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT license](LICENSE-MIT),
+at your option. Unless you state otherwise, any contribution you submit for inclusion in Mellon
+is licensed the same way, without any additional terms or conditions.

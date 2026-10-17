@@ -7,7 +7,7 @@ unmaintained = "workspace"
 
 [licenses]
 # Every licence in the tree today (cargo deny list, 2026-10-17), all compatible with
-# MIT. GPL and LGPL crates in the tree are dual-licensed with one of these.
+# MIT OR Apache-2.0. GPL and LGPL crates in the tree are dual-licensed with one of these.
 allow = [
     "0BSD",
     "Apache-2.0",

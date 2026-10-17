@@ -8,6 +8,20 @@ and versions follow [Semantic Versioning](https://semver.org/).
 ### Added
 
 - An eye button on every row shows or hides just that value; Reveal still switches them all.
+- The `mellon` skill (`skills/mellon`), served over the MCP Skills extension: how to use a value
+  without reading it, what masking does not cover, recipes.
+- MCP: protocol version negotiation, `server/discover`, server instructions, tool annotations,
+  JSON-RPC errors for bad input and unknown tools or methods, as in Ithildin.
+
+### Changed
+
+- Licensed under MIT OR Apache-2.0, as Ithildin.
+- The default branch is `main`.
+- README follows Ithildin's layout, with step-by-step install from a release.
+
+### Removed
+
+- `scripts/install-release.sh`: the README's install steps replace it, as in Ithildin.
 
 ## [0.3.0] - 2026-10-17
 

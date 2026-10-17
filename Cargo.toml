@@ -3,7 +3,7 @@ name = "mellon"
 version = "0.3.0"
 edition = "2024"
 description = "Search, copy and edit the KEY=VALUE pairs in every .env file on your Mac. Native macOS app."
-license = "MIT"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/tarikalim/Mellon"
 readme = "README.md"
 keywords = ["dotenv", "env", "mcp", "gpui", "macos"]
@@ -15,6 +15,7 @@ publish = false
 gpui-kit = "=0.7.1"
 ignore = "0.4.33"
 serde_json = "1"
+sha2 = "0.11"
 
 [profile.dev]
 # Deps optimized so the UI stays responsive in debug builds.

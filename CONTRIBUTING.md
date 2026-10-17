@@ -52,6 +52,7 @@ Clippy and the tests run on macOS and are skipped while the pull request is a dr
 | `src/config.rs` | Search roots, skip list, the config and scratch files |
 | `src/ui.rs`, `src/theme.rs` | The window |
 | `src/mcp.rs` | MCP server |
+| `skills/mellon/` | The skill served over MCP; update it when an MCP tool changes |
 
 ## Releases
 
