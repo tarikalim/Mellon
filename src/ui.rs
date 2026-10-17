@@ -6,6 +6,7 @@ use std::time::Duration;
 
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
+use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
 use gpui_kit::component::{Icon, IconName, Selectable as _, Sizable as _};
 use gpui_kit::component::{Theme, ThemeConfig, ThemeMode};
 use gpui_kit::prelude::FluentBuilder as _;
@@ -13,7 +14,7 @@ use gpui_kit::*;
 
 use crate::config::{self, Config};
 use crate::store::{self, Entry};
-use crate::theme::PAL;
+use crate::theme::pal;
 
 const SIDEBAR: f32 = 260.;
 const KEY_COLUMN: f32 = 300.;
@@ -27,7 +28,7 @@ pub fn run() {
         .with_assets(gpui_kit::assets::Assets)
         .run(|cx| {
             gpui_kit::init(cx);
-            apply_theme(cx);
+            apply_theme(&crate::theme::saved_choice(), cx);
             cx.on_window_closed(|cx, _| {
                 if cx.windows().is_empty() {
                     cx.quit();
@@ -51,13 +52,28 @@ pub fn run() {
         });
 }
 
-/// gpui-component's own widgets (inputs, buttons, tooltips) in the window's colours.
-fn apply_theme(cx: &mut App) {
-    match serde_json::from_value::<ThemeConfig>(crate::theme::component_theme(&PAL)) {
-        Ok(config) => Theme::global_mut(cx).dark_theme = Rc::new(config),
+/// Draws the window and gpui-component's own widgets (inputs, menus, tooltips) with the named
+/// theme; an unknown name falls back to the default.
+fn apply_theme(name: &str, cx: &mut App) {
+    let themes = crate::theme::available();
+    let palette = themes
+        .iter()
+        .find(|(n, _)| n == name)
+        .unwrap_or(&themes[0])
+        .1;
+    crate::theme::set(palette);
+    match serde_json::from_value::<ThemeConfig>(crate::theme::component_theme(&palette)) {
+        Ok(config) if palette.dark => Theme::global_mut(cx).dark_theme = Rc::new(config),
+        Ok(config) => Theme::global_mut(cx).light_theme = Rc::new(config),
         Err(e) => eprintln!("component theme: {e}"),
     }
-    Theme::change(ThemeMode::Dark, None, cx);
+    let mode = if palette.dark {
+        ThemeMode::Dark
+    } else {
+        ThemeMode::Light
+    };
+    Theme::change(mode, None, cx);
+    cx.refresh_windows();
 }
 
 pub struct Mellon {
@@ -285,8 +301,8 @@ impl Render for Mellon {
             .size_full()
             .flex()
             .flex_col()
-            .bg(rgb(PAL.bg))
-            .text_color(rgb(PAL.text))
+            .bg(rgb(pal().bg))
+            .text_color(rgb(pal().text))
             .text_size(px(13.))
             .child(self.header(cx))
             .when(self.adding, |el| el.child(self.add_bar(cx)))
@@ -317,7 +333,7 @@ impl Mellon {
             .child(
                 div().flex_1().min_w_0().child(
                     Input::new(&self.search)
-                        .prefix(Icon::new(IconName::Search).text_color(rgb(PAL.muted)))
+                        .prefix(Icon::new(IconName::Search).text_color(rgb(pal().muted)))
                         .cleanable(true),
                 ),
             )
@@ -386,6 +402,7 @@ impl Mellon {
                     .tooltip("Rescan the folders and reload the config")
                     .on_click(cx.listener(|this, _, _, cx| this.rescan(cx))),
             )
+            .child(theme_menu())
             .child(
                 Button::new("config")
                     .icon(IconName::Settings)
@@ -433,7 +450,7 @@ impl Mellon {
             .child(
                 div()
                     .text_size(px(11.))
-                    .text_color(rgb(PAL.muted))
+                    .text_color(rgb(pal().muted))
                     .child(config::display_path(&config::scratch_file())),
             )
     }
@@ -466,7 +483,7 @@ impl Mellon {
             .gap(px(1.))
             .p(px(6.))
             .rounded(px(10.))
-            .bg(rgb(PAL.surface))
+            .bg(rgb(pal().surface))
             .child(
                 folder_row(
                     "all",
@@ -479,7 +496,7 @@ impl Mellon {
                     this.refilter(cx);
                 })),
             )
-            .child(div().my(px(4.)).h(px(1.)).bg(rgb(PAL.border)))
+            .child(div().my(px(4.)).h(px(1.)).bg(rgb(pal().border)))
             .child(list)
     }
 
@@ -488,7 +505,7 @@ impl Mellon {
         let heading = |label: &'static str| {
             div()
                 .text_size(px(11.))
-                .text_color(rgb(PAL.muted))
+                .text_color(rgb(pal().muted))
                 .child(label)
         };
         div()
@@ -497,7 +514,7 @@ impl Mellon {
             .flex()
             .flex_col()
             .rounded(px(10.))
-            .bg(rgb(PAL.surface))
+            .bg(rgb(pal().surface))
             .overflow_hidden()
             .child(
                 div()
@@ -507,7 +524,7 @@ impl Mellon {
                     .h(px(30.))
                     .px(px(14.))
                     .border_b_1()
-                    .border_color(rgb(PAL.border))
+                    .border_color(rgb(pal().border))
                     .child(div().w(px(KEY_COLUMN)).flex_none().child(heading("KEY")))
                     .when(all, |el| {
                         el.child(
@@ -525,7 +542,7 @@ impl Mellon {
                     .flex()
                     .items_center()
                     .justify_center()
-                    .text_color(rgb(PAL.muted))
+                    .text_color(rgb(pal().muted))
                     .child("No keys match")
                     .into_any_element()
             } else {
@@ -560,7 +577,7 @@ impl Mellon {
                 let key = if entry.commented {
                     div()
                         .italic()
-                        .text_color(rgb(PAL.muted))
+                        .text_color(rgb(pal().muted))
                         .child(format!("# {}", entry.key))
                 } else {
                     div()
@@ -573,7 +590,7 @@ impl Mellon {
                         .truncate()
                         .font_family(MONO)
                         .text_size(px(12.))
-                        .text_color(rgb(if self.reveal { PAL.text } else { PAL.muted }))
+                        .text_color(rgb(if self.reveal { pal().text } else { pal().muted }))
                         .child(if self.reveal {
                             entry.value.clone()
                         } else {
@@ -589,9 +606,9 @@ impl Mellon {
                     .gap(px(12.))
                     .px(px(14.))
                     .border_b_1()
-                    .border_color(rgb(PAL.border))
+                    .border_color(rgb(pal().border))
                     .cursor_pointer()
-                    .hover(|s| s.bg(rgb(PAL.hover)))
+                    .hover(|s| s.bg(rgb(pal().hover)))
                     .on_click(cx.listener(move |this, _, window, cx| {
                         if this.edit_mode {
                             this.start_edit(index, window, cx);
@@ -614,7 +631,7 @@ impl Mellon {
                                 .flex_none()
                                 .truncate()
                                 .text_size(px(12.))
-                                .text_color(rgb(PAL.muted))
+                                .text_color(rgb(pal().muted))
                                 .child(entry.repo.clone()),
                         )
                     })
@@ -664,7 +681,7 @@ impl Mellon {
             .h(px(32.))
             .px(px(22.))
             .text_size(px(12.))
-            .text_color(rgb(PAL.muted))
+            .text_color(rgb(pal().muted))
             .child(div().flex_1().truncate().child(self.status.clone()))
             .child(format!(
                 "{} of {} keys · {hint}",
@@ -672,6 +689,29 @@ impl Mellon {
                 self.entries.len()
             ))
     }
+}
+
+/// Every theme in Zed's theme files; the choice is kept in the config folder.
+fn theme_menu() -> impl IntoElement {
+    Button::new("theme")
+        .icon(IconName::Palette)
+        .ghost()
+        .tooltip("Theme")
+        .dropdown_menu_with_anchor(Anchor::TopRight, |mut menu, _, _| {
+            let current = crate::theme::saved_choice();
+            for (name, _) in crate::theme::available() {
+                let pick = name.clone();
+                menu = menu.item(
+                    PopupMenuItem::new(name.clone())
+                        .checked(name == current)
+                        .on_click(move |_, _, cx| {
+                            crate::theme::save_choice(&pick);
+                            apply_theme(&pick, cx);
+                        }),
+                );
+            }
+            menu
+        })
 }
 
 fn folder_row(
@@ -690,18 +730,18 @@ fn folder_row(
         .px(px(10.))
         .rounded(px(6.))
         .cursor_pointer()
-        .when(selected, |el| el.bg(rgb(PAL.selected)))
-        .when(!selected, |el| el.hover(|s| s.bg(rgb(PAL.hover))))
+        .when(selected, |el| el.bg(rgb(pal().selected)))
+        .when(!selected, |el| el.hover(|s| s.bg(rgb(pal().hover))))
         .child(
             Icon::new(IconName::Folder)
                 .small()
-                .text_color(rgb(PAL.muted)),
+                .text_color(rgb(pal().muted)),
         )
         .child(div().flex_1().min_w_0().truncate().child(label))
         .child(
             div()
                 .text_size(px(11.))
-                .text_color(rgb(PAL.muted))
+                .text_color(rgb(pal().muted))
                 .child(count.to_string()),
         )
 }

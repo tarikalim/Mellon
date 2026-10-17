@@ -24,8 +24,8 @@ exactly as they are, and the app only reads and writes those files.
   one line of the file is rewritten. Off by default, so nothing changes by accident.
 - **+** adds a key that belongs to no folder; it goes to `~/.config/mellon/scratch.env`.
 - **↻** rescans the folders and reloads the config; the gear opens the config in `$EDITOR`.
-
-The colours are the Zed theme *Islands iTerm*, as in Ithildin and Redbook.
+- **Theme** (palette icon) lists every theme in Zed's theme files; the default is *Islands
+  iTerm*, as in Ithildin and Redbook. The choice is kept in `~/.config/mellon/theme`.
 
 ## Config
 

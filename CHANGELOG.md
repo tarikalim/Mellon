@@ -25,9 +25,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Theme menu: every theme in Zed's theme files, Islands iTerm the default, as in Ithildin.
 - Contributing guide, code of conduct, security policy, changelog, issue and pull request
   templates, Dependabot, and a pull request check: branch name, commit messages and PR title, no
-  AI co-author, gitleaks, `cargo fmt`, `cargo-deny`, clippy and tests.
+  AI co-author or attribution (`Claude-Session:` trailers, "Generated with …" in the PR body),
+  gitleaks, `cargo fmt`, `cargo-deny`, clippy and tests.
 
 ## [0.2.0]
 
