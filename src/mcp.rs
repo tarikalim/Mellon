@@ -24,7 +24,7 @@ const SKILL_FILES: &[(&str, &str)] = &[
     ),
 ];
 
-const INSTRUCTIONS: &str = "Mellon indexes every KEY=VALUE in the .env files on this Mac. Never read a .env file \
+const INSTRUCTIONS: &str = "Mellon indexes every KEY=VALUE in the .env files on this computer. Never read a .env file \
 yourself. Find a key with list_keys (repo:KEY, never values), then run a command with it set as an environment \
 variable with run_with_env; values that show up in the output are masked. The `mellon` skill explains both.";
 
@@ -175,7 +175,7 @@ fn tools() -> Value {
         },
         {
             "name": "run_with_env",
-            "description": "Run a shell command with the given keys set as environment variables, without showing their values. Reference them as $KEY in the command. A key is `KEY` or `repo:KEY` when several repos hold different values. Values are masked in the output.",
+            "description": "Run a shell command with the given keys set as environment variables, without showing their values. Reference them as $KEY in the command (%KEY% on Windows, where it runs under cmd /C). A key is `KEY` or `repo:KEY` when several repos hold different values. Values are masked in the output.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -223,8 +223,13 @@ fn call(params: &Value) -> Result<String, String> {
                 let spec = spec.as_str().ok_or("keys must be strings")?;
                 env.push(resolve(&entries, spec)?);
             }
-            let mut cmd = Command::new("sh");
-            cmd.arg("-c")
+            let (shell, flag) = if cfg!(windows) {
+                ("cmd", "/C")
+            } else {
+                ("sh", "-c")
+            };
+            let mut cmd = Command::new(shell);
+            cmd.arg(flag)
                 .arg(command)
                 .envs(env.iter().map(|(k, v)| (k, v)));
             if let Some(cwd) = args["cwd"].as_str() {

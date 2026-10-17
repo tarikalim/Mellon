@@ -5,6 +5,23 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-17
+
+### Added
+
+- Linux and Windows builds: the release has a Linux x86_64 `.tar.gz` (program, launcher, icon)
+  and a Windows x86_64 `.zip`; `ci.yml` builds and tests both.
+
+### Changed
+
+- `run_with_env` runs the command with `cmd /C` on Windows (`sh -c` elsewhere).
+- The home folder is `USERPROFILE` on Windows; `AppData`, `.local` and `snap` are skipped.
+- `MELLON_ROOTS` and `MELLON_SKIP` are separated by `;` on Windows, where paths hold `C:`.
+- Open uses the system's default app outside macOS; Zed themes are read from Zed's folders on
+  each system.
+
+## [0.3.0] - 2026-10-17
+
 ### Added
 
 - An eye button on every row shows or hides just that value; Reveal still switches them all.
@@ -12,21 +29,17 @@ and versions follow [Semantic Versioning](https://semver.org/).
   without reading it, what masking does not cover, recipes.
 - MCP: protocol version negotiation, `server/discover`, server instructions, tool annotations,
   JSON-RPC errors for bad input and unknown tools or methods, as in Ithildin.
+- Theme menu: every theme in Zed's theme files, Islands iTerm the default, as in Ithildin.
+- Contributing guide, code of conduct, security policy, changelog, issue and pull request
+  templates, Dependabot, and a pull request check: branch name, commit messages and PR title, no
+  AI co-author or attribution (`Claude-Session:` trailers, "Generated with …" in the PR body),
+  gitleaks, `cargo fmt`, `cargo-deny`, clippy and tests.
 
 ### Changed
 
 - Licensed under MIT OR Apache-2.0, as Ithildin.
 - The default branch is `main`.
 - README follows Ithildin's layout, with step-by-step install from a release.
-
-### Removed
-
-- `scripts/install-release.sh`: the README's install steps replace it, as in Ithildin.
-
-## [0.3.0] - 2026-10-17
-
-### Changed
-
 - Renamed from envhub to Mellon: app, binary, MCP server name, `~/.config/mellon` and the
   `MELLON_ROOTS` / `MELLON_SKIP` keys. The old config folder is moved on first run and the old
   keys are still read; `scripts/bundle.sh` removes the old `envhub.app`.
@@ -41,15 +54,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ### Removed
 
+- `scripts/install-release.sh`: the README's install steps replace it, as in Ithildin.
 - The second "filter these results" box: the search already narrows within the chosen folder.
-
-### Added
-
-- Theme menu: every theme in Zed's theme files, Islands iTerm the default, as in Ithildin.
-- Contributing guide, code of conduct, security policy, changelog, issue and pull request
-  templates, Dependabot, and a pull request check: branch name, commit messages and PR title, no
-  AI co-author or attribution (`Claude-Session:` trailers, "Generated with …" in the PR body),
-  gitleaks, `cargo fmt`, `cargo-deny`, clippy and tests.
 
 ## [0.2.0]
 
@@ -57,6 +63,7 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 - `envhub mcp`: an MCP server that lets agents use env values without seeing them.
 
-[Unreleased]: https://github.com/tarikalim/Mellon/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/tarikalim/Mellon/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/tarikalim/Mellon/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/tarikalim/Mellon/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/tarikalim/Mellon/releases/tag/v0.2.0

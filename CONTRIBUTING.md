@@ -4,12 +4,12 @@ Thanks for helping. Mellon is a small project, so the process is short.
 
 ## Build and run
 
-You need macOS and stable Rust.
+You need stable Rust; on Linux, also the packages `scripts/install-linux-deps.sh` installs.
 
 ```sh
 cargo run                  # the window, with a debug build
 cargo test
-scripts/bundle.sh          # release build installed as /Applications/Mellon.app
+scripts/bundle.sh          # macOS: release build installed as /Applications/Mellon.app
 ```
 
 Point `XDG_CONFIG_HOME` at another folder, and `MELLON_ROOTS` in its `mellon/.env` at a test
@@ -37,7 +37,8 @@ The pull request check runs these, and also checks:
 - **No secrets** in the new commits (gitleaks).
 - **Dependencies**: no known vulnerability (RustSec), only the licences in `deny.toml`.
 
-Clippy and the tests run on macOS and are skipped while the pull request is a draft.
+Clippy and the tests run on macOS and are skipped while the pull request is a draft; `ci.yml` also
+builds and tests on Linux and Windows.
 
 - One change per pull request, with a test when it changes behaviour.
 - Code follows `cargo fmt`'s defaults. Keep code comments to a line or two; the reasoning goes in

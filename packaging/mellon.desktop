@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Mellon
+Comment=Search, copy and edit the values in your .env files
+Exec=mellon
+Icon=mellon
+Terminal=false
+Categories=Development;Utility;
+StartupWMClass=mellon
