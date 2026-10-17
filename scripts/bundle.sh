@@ -3,7 +3,8 @@
 # scripts/bundle.sh <binary> <out dir> packages a prebuilt binary without installing.
 # Icon: assets/icon.svg is the source; scripts/render-icon.swift renders it, and AppIcon.icns and
 # mellon.png are made from that (iconutil, sips).
-# The app's binary is the only one: Claude Code's MCP entry runs it too, so one bundle updates both.
+# The app's binary is the only one: Claude Code's MCP entry and the `mellon` CLI (a symlink in
+# ~/.local/bin) run it too, so one bundle updates all three.
 set -e
 cd "$(dirname "$0")/.."
 bin="${1:-target/release/mellon}"
@@ -22,7 +23,6 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin" "$app/Contents/MacOS/mellon.new"
 mv -f "$app/Contents/MacOS/mellon.new" "$app/Contents/MacOS/mellon"
 cp assets/AppIcon.icns "$app/Contents/Resources/"
-version=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
 cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -33,8 +33,8 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>CFBundleExecutable</key><string>mellon</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>$version</string>
-  <key>CFBundleVersion</key><string>$version</string>
+  <key>CFBundleShortVersionString</key><string>$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)</string>
+  <key>CFBundleVersion</key><string>$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)</string>
   <key>LSMinimumSystemVersion</key><string>12.0</string>
   <key>LSApplicationCategoryType</key><string>public.app-category.developer-tools</string>
   <key>NSHighResolutionCapable</key><true/>
