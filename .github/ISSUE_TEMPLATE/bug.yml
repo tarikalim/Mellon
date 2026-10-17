@@ -1,0 +1,38 @@
+name: Bug report
+description: Something does not work as it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Put this line in a .env file: …
+        2. Search for the key
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Mellon version
+      description: From the release you installed, or `git rev-parse --short HEAD`.
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and chip
+      placeholder: macOS 26.1, Apple M3
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots, logs, the config file (no real values)
+      description: Leave out anything private.

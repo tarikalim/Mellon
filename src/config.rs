@@ -1,4 +1,4 @@
-//! Search roots and skip lists, read from `~/.config/envhub/.env`.
+//! Search roots and skip lists, read from `~/.config/mellon/.env`.
 
 use std::io;
 use std::path::{Path, PathBuf};
@@ -28,10 +28,17 @@ pub fn home() -> PathBuf {
 }
 
 pub fn config_dir() -> PathBuf {
-    match std::env::var_os("XDG_CONFIG_HOME") {
-        Some(d) if !d.is_empty() => PathBuf::from(d).join("envhub"),
-        _ => home().join(".config/envhub"),
+    let base = match std::env::var_os("XDG_CONFIG_HOME") {
+        Some(d) if !d.is_empty() => PathBuf::from(d),
+        _ => home().join(".config"),
+    };
+    let dir = base.join("mellon");
+    // One-time move from the pre-rename folder.
+    let old = base.join("envhub");
+    if !dir.exists() && old.is_dir() {
+        let _ = std::fs::rename(&old, &dir);
     }
+    dir
 }
 
 pub fn config_file() -> PathBuf {
@@ -50,8 +57,8 @@ pub fn write_template_if_missing() -> io::Result<PathBuf> {
     Ok(path)
 }
 
-pub const ROOTS_KEY: &str = "ENVHUB_ROOTS";
-pub const SKIP_KEY: &str = "ENVHUB_SKIP";
+pub const ROOTS_KEY: &str = "MELLON_ROOTS";
+pub const SKIP_KEY: &str = "MELLON_SKIP";
 
 /// Holds keys that belong to no repo.
 pub fn scratch_file() -> PathBuf {
@@ -81,8 +88,8 @@ impl Config {
         cfg
     }
 
-    /// Reads `ENVHUB_ROOTS` and `ENVHUB_SKIP` out of an env file. Both are
-    /// colon-separated, like `PATH`.
+    /// Reads `MELLON_ROOTS` and `MELLON_SKIP` (or the pre-rename `ENVHUB_*`) out of an env
+    /// file. Both are colon-separated, like `PATH`.
     pub fn parse(text: &str) -> Self {
         let mut cfg = Self::default();
         for line in text.lines() {
@@ -90,8 +97,10 @@ impl Config {
                 continue;
             };
             match key.as_str() {
-                ROOTS_KEY => cfg.roots = split_list(&value).map(expand).collect(),
-                SKIP_KEY => cfg.skip = split_list(&value).map(str::to_owned).collect(),
+                ROOTS_KEY | "ENVHUB_ROOTS" => cfg.roots = split_list(&value).map(expand).collect(),
+                SKIP_KEY | "ENVHUB_SKIP" => {
+                    cfg.skip = split_list(&value).map(str::to_owned).collect()
+                }
                 _ => {}
             }
         }
@@ -130,7 +139,7 @@ mod tests {
     #[test]
     fn parses_roots_and_skips() {
         let cfg =
-            Config::parse("# comment\nENVHUB_ROOTS=~/code : /tmp/x\nENVHUB_SKIP=dist:backup\n");
+            Config::parse("# comment\nMELLON_ROOTS=~/code : /tmp/x\nMELLON_SKIP=dist:backup\n");
         assert_eq!(
             cfg.roots,
             vec![home().join("code"), PathBuf::from("/tmp/x")]

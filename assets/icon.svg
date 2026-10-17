@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a4f57"/>
+      <stop offset="1" stop-color="#1b1e23"/>
+    </linearGradient>
+    <clipPath id="fc">
+      <rect x="100" y="100" width="824" height="824" rx="185"/>
+    </clipPath>
+    <filter id="fs">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#fg)"/>
+  <rect x="100" y="100" width="110" height="824" fill="#121417" clip-path="url(#fc)"/>
+  <g filter="url(#fs)" opacity="0.7">
+    <text x="560" y="700" text-anchor="middle" font-family="Didot" font-size="420" fill="#cfe0ff">M</text>
+  </g>
+  <text x="560" y="700" text-anchor="middle" font-family="Didot" font-size="420" fill="#f2f5f8">M</text>
+  <g transform="translate(780 250)" fill="#ffffff">
+    <path d="M0 -42 L9.24 -9.24 L42 0 L9.24 9.24 L0 42 L-9.24 9.24 L-42 0 L-9.24 -9.24 Z"/>
+    <path transform="rotate(45)" d="M0 -27.3 L5.880000000000001 -5.880000000000001 L27.3 0 L5.880000000000001 5.880000000000001 L0 27.3 L-5.880000000000001 5.880000000000001 L-27.3 0 L-5.880000000000001 -5.880000000000001 Z"/>
+  </g>
+  <line x1="330" y1="780" x2="790" y2="780" stroke="#eef2f6" stroke-width="10" stroke-linecap="round"/>
+</svg>

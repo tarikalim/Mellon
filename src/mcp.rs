@@ -1,49 +1,168 @@
-//! `envhub mcp`: an MCP server on stdio that lets agents use values without being shown them.
+//! `mellon mcp`: MCP server over stdio (newline-delimited JSON-RPC 2.0), no auth.
+//! Tools let agents use env values without being shown them. The `mellon` skill
+//! (skills/mellon) is served through the Skills extension.
 
-use std::io::{self, BufRead, Write};
+use std::io::{self, BufRead as _, Write as _};
 use std::process::Command;
 
 use serde_json::{Value, json};
+use sha2::{Digest as _, Sha256};
 
 use crate::config::Config;
 use crate::store::{self, Entry};
 
-pub fn serve() -> io::Result<()> {
-    let stdin = io::stdin();
+const PROTOCOL: &str = "2025-06-18";
+const SUPPORTED: &[&str] = &["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
+const SKILLS: &str = "io.modelcontextprotocol/skills";
+
+/// The skill's files: (path inside the skill, text).
+const SKILL_FILES: &[(&str, &str)] = &[
+    ("SKILL.md", include_str!("../skills/mellon/SKILL.md")),
+    (
+        "references/recipes.md",
+        include_str!("../skills/mellon/references/recipes.md"),
+    ),
+];
+
+const INSTRUCTIONS: &str = "Mellon indexes every KEY=VALUE in the .env files on this Mac. Never read a .env file \
+yourself. Find a key with list_keys (repo:KEY, never values), then run a command with it set as an environment \
+variable with run_with_env; values that show up in the output are masked. The `mellon` skill explains both.";
+
+pub fn run() -> io::Result<()> {
     let mut out = io::stdout().lock();
-    for line in stdin.lock().lines() {
-        let Ok(req) = serde_json::from_str::<Value>(&line?) else {
+    for line in io::stdin().lock().lines() {
+        let line = line?;
+        if line.trim().is_empty() {
             continue;
+        }
+        if let Some(resp) = handle(&line) {
+            writeln!(out, "{resp}")?;
+            out.flush()?;
+        }
+    }
+    Ok(())
+}
+
+fn rpc_error(id: Value, code: i64, message: &str) -> Value {
+    json!({ "jsonrpc": "2.0", "id": id, "error": { "code": code, "message": message } })
+}
+
+/// One JSON-RPC message in, the response out (None for notifications).
+pub fn handle(line: &str) -> Option<Value> {
+    let msg: Value = match serde_json::from_str(line) {
+        Ok(v) => v,
+        Err(e) => return Some(rpc_error(Value::Null, -32700, &format!("parse error: {e}"))),
+    };
+    let id = msg.get("id").cloned();
+    let Some(method) = msg.get("method").and_then(Value::as_str) else {
+        return match id {
+            Some(id) if msg.get("result").is_none() && msg.get("error").is_none() => {
+                Some(rpc_error(id, -32600, "invalid request"))
+            }
+            _ => None,
         };
-        // Notifications carry no id and get no reply.
-        let Some(id) = req.get("id").cloned() else {
-            continue;
-        };
-        let params = req.get("params").cloned().unwrap_or(Value::Null);
-        let reply = match req["method"].as_str().unwrap_or("") {
-            "initialize" => json!({"result": {
-                "protocolVersion": params["protocolVersion"].as_str().unwrap_or("2025-06-18"),
-                "capabilities": {"tools": {}},
-                "serverInfo": {"name": "envhub", "version": env!("CARGO_PKG_VERSION")},
-            }}),
-            "ping" => json!({"result": {}}),
-            "tools/list" => json!({"result": {"tools": tools()}}),
-            "tools/call" => {
+    };
+    let id = id?;
+    let params = msg.get("params").cloned().unwrap_or_else(|| json!({}));
+    let capabilities =
+        json!({ "tools": { "listChanged": false }, "resources": {}, "extensions": { SKILLS: {} } });
+    let cache = |mut v: Value| {
+        v["resultType"] = json!("complete");
+        v["ttlMs"] = json!(300_000);
+        v["cacheScope"] = json!("public");
+        v
+    };
+    let result = match method {
+        "initialize" => {
+            let asked = params["protocolVersion"].as_str();
+            let version = asked.filter(|v| SUPPORTED.contains(v)).unwrap_or(PROTOCOL);
+            Ok(json!({
+                "protocolVersion": version,
+                "capabilities": capabilities,
+                "serverInfo": { "name": "mellon", "version": env!("CARGO_PKG_VERSION") },
+                "instructions": INSTRUCTIONS
+            }))
+        }
+        "server/discover" => Ok(
+            json!({ "capabilities": capabilities, "serverInfo": { "name": "mellon", "version": env!("CARGO_PKG_VERSION") }, "instructions": INSTRUCTIONS }),
+        ),
+        "ping" => Ok(json!({})),
+        "tools/list" => Ok(json!({ "tools": tools() })),
+        "tools/call" => {
+            let name = params["name"].as_str().unwrap_or_default();
+            if tools()
+                .as_array()
+                .is_some_and(|t| t.iter().any(|t| t["name"] == name))
+            {
                 let (text, is_error) = match call(&params) {
                     Ok(t) => (t, false),
                     Err(t) => (t, true),
                 };
-                json!({"result": {"content": [{"type": "text", "text": text}], "isError": is_error}})
+                Ok(json!({ "content": [{ "type": "text", "text": text }], "isError": is_error }))
+            } else {
+                Err((-32602, format!("unknown tool: {name}")))
             }
-            m => json!({"error": {"code": -32601, "message": format!("unknown method {m}")}}),
-        };
-        let mut reply = reply;
-        reply["jsonrpc"] = json!("2.0");
-        reply["id"] = id;
-        writeln!(out, "{reply}")?;
-        out.flush()?;
+        }
+        "skills/list" => Ok(cache(json!({ "skills": [skill_entry()] }))),
+        "skills/get" => match params["uri"].as_str() {
+            Some(uri) if uri == skill_uri("SKILL.md") => {
+                Ok(cache(json!({ "skill": skill_entry() })))
+            }
+            _ => Err((-32602, "unknown skill".into())),
+        },
+        "resources/list" => Ok(
+            json!({ "resources": SKILL_FILES.iter().map(|(path, text)| json!({
+            "uri": skill_uri(path), "name": format!("mellon/{path}"), "mimeType": "text/markdown", "size": text.len()
+        })).collect::<Vec<_>>() }),
+        ),
+        "resources/read" => match SKILL_FILES
+            .iter()
+            .find(|(path, _)| params["uri"].as_str() == Some(&skill_uri(path)))
+        {
+            Some((path, text)) => Ok(cache(
+                json!({ "contents": [{ "uri": skill_uri(path), "mimeType": "text/markdown", "text": text }] }),
+            )),
+            None => Err((-32602, "unknown resource".into())),
+        },
+        _ => Err((-32601, format!("method not found: {method}"))),
+    };
+    Some(match result {
+        Ok(r) => json!({ "jsonrpc": "2.0", "id": id, "result": r }),
+        Err((code, m)) => rpc_error(id, code, &m),
+    })
+}
+
+fn skill_uri(path: &str) -> String {
+    format!("skill://mellon/{path}")
+}
+
+/// The skills/list entry: frontmatter and a manifest of every file with its digest and size.
+fn skill_entry() -> Value {
+    let skill = SKILL_FILES[0].1;
+    let mut frontmatter = serde_json::Map::new();
+    for line in skill.split("---").nth(1).unwrap_or_default().lines() {
+        if let Some((k, v)) = line.split_once(':') {
+            frontmatter.insert(k.trim().into(), json!(v.trim()));
+        }
     }
-    Ok(())
+    json!({
+        "uri": skill_uri("SKILL.md"),
+        "frontmatter": frontmatter,
+        "resources": SKILL_FILES.iter().map(|(path, text)| json!({
+            "uri": skill_uri(path),
+            "digest": sha256(text),
+            "size": text.len()
+        })).collect::<Vec<_>>()
+    })
+}
+
+/// `sha256:<hex>` of a file's bytes, as the Skills manifest wants it.
+fn sha256(text: &str) -> String {
+    let hex: String = Sha256::digest(text.as_bytes())
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
+    format!("sha256:{hex}")
 }
 
 fn tools() -> Value {
@@ -51,7 +170,8 @@ fn tools() -> Value {
         {
             "name": "list_keys",
             "description": "List env keys found in the .env files on this machine, as `repo:KEY`. Values are never shown. Terms in `query` are ANDed over repo and key.",
-            "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}},
+            "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}, "additionalProperties": false},
+            "annotations": {"readOnlyHint": true, "destructiveHint": false, "openWorldHint": false},
         },
         {
             "name": "run_with_env",
@@ -64,7 +184,9 @@ fn tools() -> Value {
                     "cwd": {"type": "string"},
                 },
                 "required": ["command", "keys"],
+                "additionalProperties": false,
             },
+            "annotations": {"readOnlyHint": false, "destructiveHint": true, "openWorldHint": true},
         },
     ])
 }
@@ -185,5 +307,45 @@ mod tests {
         assert!(resolve(&entries, "NOPE").is_err());
         let env = [("TOKEN".to_string(), "s3cret".to_string())];
         assert_eq!(mask("got s3cret".into(), &env), "got ***TOKEN***");
+    }
+
+    fn rpc(method: &str, params: Value) -> Value {
+        let req = json!({ "jsonrpc": "2.0", "id": 1, "method": method, "params": params });
+        handle(&req.to_string()).unwrap()
+    }
+
+    #[test]
+    fn skill_is_served_with_a_matching_manifest() {
+        let init = rpc("initialize", json!({ "protocolVersion": "2025-06-18" }));
+        assert!(init["result"]["capabilities"]["extensions"][SKILLS].is_object());
+        let list = rpc("skills/list", json!({}));
+        let skill = &list["result"]["skills"][0];
+        assert_eq!(skill["frontmatter"]["name"], "mellon");
+        for file in skill["resources"].as_array().unwrap() {
+            let read = rpc("resources/read", json!({ "uri": file["uri"] }));
+            let text = read["result"]["contents"][0]["text"].as_str().unwrap();
+            assert_eq!(file["size"], text.len());
+            assert_eq!(file["digest"], sha256(text));
+        }
+        assert_eq!(
+            rpc("skills/get", json!({ "uri": "skill://nope/SKILL.md" }))["error"]["code"],
+            -32602
+        );
+        // A known vector, so the manifest's digest is not only checked against itself.
+        assert_eq!(
+            sha256("hello"),
+            "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+        );
+    }
+
+    #[test]
+    fn protocol_errors() {
+        assert_eq!(handle("not json").unwrap()["error"]["code"], -32700);
+        assert_eq!(rpc("nope", json!({}))["error"]["code"], -32601);
+        assert_eq!(
+            rpc("tools/call", json!({ "name": "nope" }))["error"]["code"],
+            -32602
+        );
+        assert!(handle(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#).is_none());
     }
 }
