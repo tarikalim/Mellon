@@ -1,16 +1,26 @@
 [package]
-name = "envhub"
-version = "0.2.0"
+name = "mellon"
+version = "0.3.0"
 edition = "2024"
-description = "Search, copy and edit the KEY=VALUE pairs in every .env file on your machine"
+description = "Search, copy and edit the KEY=VALUE pairs in every .env file on your Mac. Native macOS app."
 license = "MIT"
+repository = "https://github.com/tarikalim/Mellon"
+readme = "README.md"
+keywords = ["dotenv", "env", "mcp", "gpui", "macos"]
+categories = ["development-tools", "gui"]
+publish = false
 
 [dependencies]
-eframe = { version = "0.36.2", default-features = false, features = ["accesskit", "default_fonts", "glow", "wayland", "x11"] }
+# gpui-kit re-exports GPUI (gpui-pre) and gpui-component.
+gpui-kit = "=0.7.1"
 ignore = "0.4.33"
 serde_json = "1"
 
+[profile.dev]
+# Deps optimized so the UI stays responsive in debug builds.
+package."*" = { opt-level = 2 }
+
 [profile.release]
-lto = true
+lto = "thin"
 codegen-units = 1
 strip = true

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b4f4a"/><stop offset="1" stop-color="#11211f"/></linearGradient>
+ <clipPath id="body"><rect x="100" y="100" width="824" height="824" rx="185"/></clipPath>
+ <filter id="soft"><feGaussianBlur stdDeviation="7"/></filter>
+</defs>
+<rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+<rect x="100" y="100" width="110" height="824" fill="#0b1715" clip-path="url(#body)"/>
+<path d="M370 790 V430 A190 190 0 0 1 750 430 V790" fill="none" stroke="#bfeee4" stroke-width="10" stroke-linecap="round" filter="url(#soft)" opacity="0.8"/>
+<path d="M370 790 V430 A190 190 0 0 1 750 430 V790" fill="none" stroke="#eefcf8" stroke-width="7" stroke-linecap="round"/>
+<g transform="translate(560 250)" fill="#f2fffb">
+ <path d="M0 -46 L10 -10 L46 0 L10 10 L0 46 L-10 10 L-46 0 L-10 -10 Z"/>
+ <path d="M0 -30 L6 -6 L30 0 L6 6 L0 30 L-6 6 L-30 0 L-6 -6 Z" transform="rotate(45)"/>
+</g>
+<text x="560" y="720" text-anchor="middle" font-family="Didot" font-size="330" fill="#a8ecdc" filter="url(#soft)" opacity="0.7">M</text>
+<text x="560" y="720" text-anchor="middle" font-family="Didot" font-size="330" fill="#eefcf8">M</text>
+<line x1="330" y1="790" x2="790" y2="790" stroke="#e6faf4" stroke-width="10" stroke-linecap="round"/>
+</svg>

@@ -141,7 +141,7 @@ pub fn scan(cfg: &Config) -> Vec<Entry> {
                 continue;
             }
             let path = dir_entry.path();
-            // envhub's own files: the scratch file is read above, the config
+            // mellon's own files: the scratch file is read above, the config
             // file holds settings rather than someone's secrets.
             if path == scratch || path == config::config_file() {
                 continue;
@@ -158,7 +158,7 @@ pub fn scan(cfg: &Config) -> Vec<Entry> {
 // Via a temporary file in the same directory: a crash or a full disk must not
 // leave a half-written .env behind.
 fn write_atomically(path: &Path, text: &str) -> io::Result<()> {
-    let tmp = path.with_extension(format!("envhub-{}.tmp", std::process::id()));
+    let tmp = path.with_extension(format!("mellon-{}.tmp", std::process::id()));
     std::fs::write(&tmp, text)?;
     if let Ok(meta) = std::fs::metadata(path) {
         let _ = std::fs::set_permissions(&tmp, meta.permissions());
@@ -225,7 +225,7 @@ mod tests {
     use super::*;
 
     fn tmp(name: &str) -> PathBuf {
-        std::env::temp_dir().join(format!("envhub-test-{name}.env"))
+        std::env::temp_dir().join(format!("mellon-test-{name}.env"))
     }
 
     fn entry(file: &Path, line: usize, key: &str, value: &str, commented: bool) -> Entry {

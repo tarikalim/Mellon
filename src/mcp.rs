@@ -1,4 +1,4 @@
-//! `envhub mcp`: an MCP server on stdio that lets agents use values without being shown them.
+//! `mellon mcp`: an MCP server on stdio that lets agents use values without being shown them.
 
 use std::io::{self, BufRead, Write};
 use std::process::Command;
@@ -24,7 +24,7 @@ pub fn serve() -> io::Result<()> {
             "initialize" => json!({"result": {
                 "protocolVersion": params["protocolVersion"].as_str().unwrap_or("2025-06-18"),
                 "capabilities": {"tools": {}},
-                "serverInfo": {"name": "envhub", "version": env!("CARGO_PKG_VERSION")},
+                "serverInfo": {"name": "mellon", "version": env!("CARGO_PKG_VERSION")},
             }}),
             "ping" => json!({"result": {}}),
             "tools/list" => json!({"result": {"tools": tools()}}),
