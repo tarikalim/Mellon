@@ -283,7 +283,13 @@ impl Mellon {
     }
 
     /// In the Mac's default text editor: an app opened from Finder has no `$EDITOR`.
+    /// macOS: the default text editor (`open -t`), as a `.env` file has no app of its own;
+    /// elsewhere the system's default app.
     fn open_path(&mut self, path: &std::path::Path, cx: &mut Context<Self>) {
+        if !cfg!(target_os = "macos") {
+            cx.open_with_system(path);
+            return;
+        }
         let opened = std::process::Command::new("open")
             .arg("-t")
             .arg(path)

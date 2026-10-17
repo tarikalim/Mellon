@@ -5,7 +5,7 @@ description: Use a value from a local .env file (a token, a password, a database
 
 # Mellon
 
-Mellon indexes every `KEY=VALUE` in the `.env` files on this Mac. Through MCP an agent can find a
+Mellon indexes every `KEY=VALUE` in the `.env` files on this computer. Through MCP an agent can find a
 key and run a command with it set, but never sees the value: values stay in the files, and any
 value that shows up in the command's output comes back as `***KEY***`.
 
@@ -20,8 +20,8 @@ Terms in `query` are ANDed over repo and key, case-insensitive: `api database`, 
 
 ## Using it
 
-`run_with_env(command, keys, cwd?)` runs `sh -c command` with the keys set as environment
-variables. Refer to them as `$KEY` in the command:
+`run_with_env(command, keys, cwd?)` runs `sh -c command` (`cmd /C command` on Windows) with the
+keys set as environment variables. Refer to them as `$KEY` in the command (`%KEY%` on Windows):
 
 ```json
 {"command": "psql \"$DATABASE_URL\" -c 'select 1'", "keys": ["work/api:DATABASE_URL"], "cwd": "~/work/api"}

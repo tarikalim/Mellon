@@ -17,12 +17,18 @@ const BUILTIN_SKIP: &[&str] = &[
     ".npm",
     ".cache",
     "Applications",
+    // Windows and Linux app data, as large as macOS's Library.
+    "AppData",
+    ".local",
+    "snap",
 ];
 
 pub const MAX_DEPTH: usize = 8;
 
+/// `HOME`, or `USERPROFILE` on Windows.
 pub fn home() -> PathBuf {
     std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("/"))
 }
@@ -108,8 +114,12 @@ impl Config {
     }
 }
 
+/// Separated like `PATH`: `:`, or `;` on Windows, where paths hold `C:`.
 fn split_list(value: &str) -> impl Iterator<Item = &str> {
-    value.split(':').map(str::trim).filter(|s| !s.is_empty())
+    value
+        .split(if cfg!(windows) { ';' } else { ':' })
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
 }
 
 pub fn is_skipped(dir_name: &str, extra: &[String]) -> bool {
@@ -138,8 +148,10 @@ mod tests {
 
     #[test]
     fn parses_roots_and_skips() {
-        let cfg =
-            Config::parse("# comment\nMELLON_ROOTS=~/code : /tmp/x\nMELLON_SKIP=dist:backup\n");
+        let sep = if cfg!(windows) { ';' } else { ':' };
+        let cfg = Config::parse(&format!(
+            "# comment\nMELLON_ROOTS=~/code {sep} /tmp/x\nMELLON_SKIP=dist{sep}backup\n"
+        ));
         assert_eq!(
             cfg.roots,
             vec![home().join("code"), PathBuf::from("/tmp/x")]

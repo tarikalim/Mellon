@@ -1,12 +1,12 @@
 [package]
 name = "mellon"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
-description = "Search, copy and edit the KEY=VALUE pairs in every .env file on your Mac. Native macOS app."
+description = "Search, copy and edit the KEY=VALUE pairs in every .env file on your computer. Native app for macOS, Linux and Windows."
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/tarikalim/Mellon"
 readme = "README.md"
-keywords = ["dotenv", "env", "mcp", "gpui", "macos"]
+keywords = ["dotenv", "env", "mcp", "gpui", "desktop"]
 categories = ["development-tools", "gui"]
 publish = false
 
@@ -16,6 +16,9 @@ gpui-kit = "=0.7.1"
 ignore = "0.4.33"
 serde_json = "1"
 sha2 = "0.11"
+
+[build-dependencies]
+winresource = "0.1"
 
 [profile.dev]
 # Deps optimized so the UI stays responsive in debug builds.
