@@ -1,113 +1,103 @@
-# EnvHub
+# Mellon
 
-A small desktop app that finds every `KEY=VALUE` in the `.env` files scattered across your
-machine, so you can search them, copy one to the clipboard, and edit it in place — without
-opening ten repos to find the one secret someone just asked you for.
+A native macOS app that finds every `KEY=VALUE` in the `.env` files across your Mac, so you can
+search them, copy one with a click and edit it in place, without opening ten repos to find the
+one secret someone just asked you for. Written in Rust with [GPUI](https://www.gpui.rs/).
 
-Built for local development convenience, not for security: values are stored in your `.env`
-files exactly as they already are, and the app only reads and writes those files.
+The name is the password to the Doors of Durin: *speak, friend, and enter*. Mellon is Sindarin
+for "friend".
 
-## Install
-
-envhub is not notarized, so macOS quarantines it however you download it and refuses to
-open it ("damaged"). The install script fetches the latest release, puts it in
-`/Applications` and clears that flag:
-
-```sh
-./tools/install-release.sh          
-```
-
-Or do it by hand: download `envhub-macos-arm64.tar.gz` from
-[Releases](../../releases), then
-
-```sh
-tar -xzf envhub-macos-arm64.tar.gz -C /Applications
-xattr -dr com.apple.quarantine /Applications/envhub.app
-```
-
-On Linux, `envhub-linux-x86_64.tar.gz` holds a single binary — untar it onto your `PATH`.
-
-Or build it yourself. Requires Rust, and macOS for the app bundle.
-
-```sh
-git clone <this repo> && cd envhub
-cargo run --release          # just run it
-./tools/install.sh           # or install it as ~/Applications/envhub.app
-```
-
-`install.sh` builds the release binary, copies it into the bundle with its icon, and leaves
-you an app you can launch from Spotlight.
+Built for local development convenience, not for security: values stay in your `.env` files
+exactly as they are, and the app only reads and writes those files.
 
 ## Use
 
-- Type in the search box to filter by key or repo; terms are ANDed (`stripe key`).
-- Click a key or a value to copy the value. `copy` does the same; `open` opens the file in `$EDITOR`.
-- Above the results there is a second box that narrows whatever is currently listed — handy
-  when a single service has a hundred keys. It clears itself when you switch repos.
-- The left panel lists every directory that has env files, with key counts. Click one to
-  scope the list to it, or `all repos` to search everything.
-- `reveal values` unmasks values; `search values` also searches inside them.
-- `commented` also lists the keys that are commented out in the files (`# KEY=VALUE`), shown
-  dimmed and prefixed with `#`. Editing one keeps it commented.
-- `edit mode` turns on inline editing: click a value, type, and click away — only that one
-  line of the file is rewritten. Off by default so nothing is changed by accident.
-- `+ new` adds a key that belongs to no repo; it goes to `~/.config/envhub/scratch.env`.
+- **Search** filters by key or folder; terms are ANDed (`stripe key`).
+- **Folders** on the left lists every directory that has env files, with key counts. Click one to
+  scope the list to it, or **All folders** to search everything.
+- **Click a row** to copy its value. Each row also has a copy button and an open button, which
+  opens the file in `$EDITOR`.
+- **Reveal** unmasks values. **Values** also searches inside them.
+- **Commented** also lists keys commented out in the files (`# KEY=VALUE`), shown dimmed with a
+  `#`. Editing one keeps it commented.
+- **Edit** turns on inline editing: click a row, type, and press Enter or click away. Only that
+  one line of the file is rewritten. Off by default, so nothing changes by accident.
+- **+** adds a key that belongs to no folder; it goes to `~/.config/mellon/scratch.env`.
+- **↻** rescans the folders and reloads the config; the gear opens the config in `$EDITOR`.
+
+The colours are the Zed theme *Islands iTerm*, as in Ithildin and Redbook.
 
 ## Config
 
-`~/.config/envhub/.env` (or `$XDG_CONFIG_HOME/envhub/.env`) — an env file like any other:
+`~/.config/mellon/.env` (or `$XDG_CONFIG_HOME/mellon/.env`), an env file like any other:
 
 ```sh
-ENVHUB_ROOTS=~/code:~/work/backend   # folders to search; unset means $HOME
-ENVHUB_SKIP=dist:backup              # extra folder names to ignore
+MELLON_ROOTS=~/code:~/work/backend   # folders to search; unset means $HOME
+MELLON_SKIP=dist:backup              # extra folder names to ignore
 ```
 
-Both are optional and `:`-separated like `PATH`. envhub writes this file, commented out and
-ready to edit, the first time it runs; the `config` button in the toolbar opens it in
-`$EDITOR`, and `↻ rescan` reloads it.
+Both are optional and `:`-separated like `PATH`. Mellon writes this file, commented out and ready
+to edit, the first time it runs. A pre-rename `~/.config/envhub` folder is moved here on first
+run, and its `ENVHUB_ROOTS` and `ENVHUB_SKIP` keys are still read.
 
 ## MCP for agents
 
-`envhub mcp` is an MCP server on stdio. Agents can list keys and run a command with chosen keys
+`mellon mcp` is an MCP server on stdio. Agents can list keys and run a command with chosen keys
 set as environment variables, without the values ever showing in their context:
 
 ```sh
-claude mcp add -s user envhub -- /Applications/envhub.app/Contents/MacOS/envhub mcp
+claude mcp add --scope user mellon -- /Applications/Mellon.app/Contents/MacOS/mellon mcp
 ```
 
-- `list_keys(query?)` lists `repo:KEY`, never values.
-- `run_with_env(command, keys, cwd?)` runs `sh -c command` with the keys set (`KEY`, or `repo:KEY`
-  when repos disagree). Values that show up in the output are masked as `***KEY***`; encoded forms are not.
+| Tool | What it does |
+|---|---|
+| `list_keys(query?)` | Lists `repo:KEY`, never values |
+| `run_with_env(command, keys, cwd?)` | Runs `sh -c command` with the keys set (`KEY`, or `repo:KEY` when repos disagree). Values that show up in the output are masked as `***KEY***`; encoded forms are not |
 
-## Layout
+## Install and run
 
-```
-src/main.rs     window setup
-src/app.rs      the egui interface
-src/config.rs   search roots and skip lists
-src/store.rs    parsing, scanning and writing .env files
-src/mcp.rs      the `envhub mcp` server for agents
-tools/          icon generator, macOS install script
+### From a release
+
+```sh
+scripts/install-release.sh      # latest release into /Applications, quarantine flag cleared
 ```
 
-`cargo test` covers the parsing, the config and the write path; `cargo clippy --all-targets`
-and `cargo fmt --check` run in CI.
+Or by hand: download `Mellon-<version>-macos-universal.dmg` from [Releases](../../releases), drag
+**Mellon** to **Applications**, then clear the quarantine flag once, because the app is signed ad
+hoc, not notarized:
 
-## Shell alternative
-
-If you only want the search-and-copy half, a shell function with ripgrep and fzf covers it:
-
-```zsh
-envs() {
-  rg --hidden --no-ignore --no-messages -n --no-heading \
-     -g '.env*' -g '!*.example' -g '!**/node_modules/**' -g '!**/.git/**' -g '!Library/**' \
-     '^[A-Za-z_][A-Za-z0-9_]*=' "$HOME" \
-  | sed "s|^$HOME/||" \
-  | fzf --delimiter='=' --nth=1 --preview 'echo {2..}' --preview-window=down:3:wrap \
-  | cut -d= -f2- | tr -d '\n' | pbcopy
-}
+```sh
+xattr -dr com.apple.quarantine /Applications/Mellon.app
 ```
 
-## License
+### From source
 
-MIT
+Rust stable on macOS:
+
+```sh
+scripts/bundle.sh          # builds release and installs /Applications/Mellon.app in place
+```
+
+It also removes a pre-rename `envhub.app`.
+
+### Command line
+
+The app and the MCP server are one binary.
+
+| Command | What it does |
+|---|---|
+| `mellon` | Opens the window |
+| `mellon mcp` | Runs the MCP server over stdio |
+
+## Releases
+
+Pushing a `v*` tag runs `.github/workflows/release.yml`: tests, a universal build, and a release
+with the `.dmg` and `.zip`.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+
+## Licence
+
+[MIT](LICENSE).
