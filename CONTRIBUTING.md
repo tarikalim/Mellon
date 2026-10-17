@@ -32,7 +32,8 @@ The pull request check runs these, and also checks:
 - **Commit messages and the PR title**: [Conventional Commits](https://www.conventionalcommits.org/),
   `feat: …`, `fix: …`, `docs: …`, at most 100 characters in the subject. Rule: `committed.toml`.
   The body says why, with any measurement that led to the change.
-- **No AI tool as co-author** (`Co-authored-by:` trailers).
+- **No AI attribution**: no AI tool as co-author (`Co-authored-by:`), no `Claude-Session:`
+  trailer, no "Generated with …" line in the PR body.
 - **No secrets** in the new commits (gitleaks).
 - **Dependencies**: no known vulnerability (RustSec), only the licences in `deny.toml`.
 

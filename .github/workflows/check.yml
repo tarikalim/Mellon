@@ -47,14 +47,20 @@ jobs:
         run: committed "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
 
       # A co-author trailer makes the named account a contributor; an AI tool is not one.
-      - name: No AI co-author
+      # Session links and "Generated with" lines are the same attribution in another form.
+      - name: No AI co-author or attribution
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
           found=$(git log --format=%B "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}" \
-            | grep -iE '^co-authored-by:.*\b(claude|anthropic|copilot|cursor|codex|openai|chatgpt|gemini|devin)\b' || true)
-          if [ -n "$found" ]; then
-            echo "An AI tool must not be a co-author; remove the trailer:" >&2
-            echo "$found" >&2
+            | grep -iE '^(co-authored-by:.*\b(claude|anthropic|copilot|cursor|codex|openai|chatgpt|gemini|devin)\b|claude-session:)' || true)
+          body=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json body --jq .body \
+            | grep -iE 'generated (with|by) .*(claude|copilot|cursor|codex|chatgpt|gemini|devin)' || true)
+          if [ -n "$found$body" ]; then
+            echo "Remove the AI attribution (commit trailers or PR body):" >&2
+            printf '%s\n' "$found" "$body" >&2
             exit 1
           fi
 
