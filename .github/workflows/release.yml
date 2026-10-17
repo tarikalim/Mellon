@@ -1,5 +1,4 @@
-name: release
-
+name: Release
 on:
   push:
     tags: ["v*"]
@@ -7,49 +6,38 @@ on:
 permissions:
   contents: write
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
-  build:
-    strategy:
-      matrix:
-        include:
-          - os: macos-latest
-            asset: envhub-macos-arm64.tar.gz
-          - os: ubuntu-latest
-            asset: envhub-linux-x86_64.tar.gz
-    runs-on: ${{ matrix.os }}
+  macos:
+    # macOS only: Mellon is a Mac app. In a private repo macOS
+    # minutes count 10×, so this runs on tags only and there is no per-push CI.
+    runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Linux build deps
-        if: runner.os == 'Linux'
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --locked --release
+      - name: Universal app
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dev libxkbcommon-dev libwayland-dev \
-            libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
-            libxkbcommon-x11-dev
-
-      - run: cargo build --release
-
-      - name: Package (macOS app bundle)
-        if: runner.os == 'macOS'
-        run: |
-          ./tools/install.sh dist/envhub.app
-          # Ad-hoc signature: arm64 refuses to launch a bundle with none, and a
-          # downloaded app is quarantined, so it would report itself as damaged.
-          codesign --force --deep --sign - dist/envhub.app
-          codesign --verify --strict --verbose=2 dist/envhub.app
-          # tar, not zip: unzipping propagates the download's quarantine flag to
-          # the bundle, and an unnotarized app then reports itself as damaged.
-          tar -czf "${{ matrix.asset }}" -C dist envhub.app
-
-      - name: Package (Linux binary)
-        if: runner.os == 'Linux'
-        run: tar -czf "${{ matrix.asset }}" -C target/release envhub
-
-      - name: Upload to the release
+          NAME="Mellon-${GITHUB_REF_NAME#v}"
+          mkdir dist
+          cargo build --locked --release --target aarch64-apple-darwin
+          cargo build --locked --release --target x86_64-apple-darwin
+          lipo -create -output target/mellon target/{aarch64,x86_64}-apple-darwin/release/mellon
+          scripts/bundle.sh target/mellon dist
+          ditto -c -k --keepParent dist/Mellon.app "dist/$NAME-macos-universal.zip"
+          hdiutil create -volname Mellon -srcfolder dist/Mellon.app -format UDZO "dist/$NAME-macos-universal.dmg"
+          rm -rf dist/Mellon.app
+      - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 \
-            || gh release create "$GITHUB_REF_NAME" --generate-notes
-          gh release upload "$GITHUB_REF_NAME" "${{ matrix.asset }}" --clobber
+          prev=$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || true)
+          git log --pretty='- %s' ${prev:+$prev..}"$GITHUB_REF_NAME" > notes.md
+          gh release create "$GITHUB_REF_NAME" dist/* --title "Mellon ${GITHUB_REF_NAME#v}" --notes-file notes.md
