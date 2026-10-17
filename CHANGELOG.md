@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- An eye button on every row shows or hides just that value; Reveal still switches them all.
+
 ## [0.3.0] - 2026-10-17
 
 ### Changed

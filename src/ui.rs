@@ -1,5 +1,6 @@
 //! The window: folders that hold env files on the left, every `KEY=VALUE` they hold on the right.
 
+use std::collections::HashSet;
 use std::ops::Range;
 use std::rc::Rc;
 use std::time::Duration;
@@ -96,6 +97,8 @@ pub struct Mellon {
     new_value: Entity<InputState>,
     /// The entry copied last, shown with a check for a moment.
     copied: Option<usize>,
+    /// Entries shown the other way from Reveal: unmasked while it is off, masked while it is on.
+    flipped: HashSet<usize>,
     status: String,
     list: UniformListScrollHandle,
     _subs: [Subscription; 2],
@@ -142,6 +145,7 @@ impl Mellon {
             new_key,
             new_value,
             copied: None,
+            flipped: HashSet::new(),
             status: String::new(),
             list: UniformListScrollHandle::new(),
             _subs: subs,
@@ -188,6 +192,7 @@ impl Mellon {
         self.entries = store::scan(&self.config);
         self.editing = None;
         self.copied = None;
+        self.flipped.clear();
         self.recount();
         self.status = format!("{} keys", self.entries.len());
         self.refilter(cx);
@@ -263,6 +268,7 @@ impl Mellon {
                 // Indexes moved with the sort.
                 self.editing = None;
                 self.copied = None;
+                self.flipped.clear();
                 self.new_key.update(cx, |s, cx| s.set_value("", window, cx));
                 self.new_value
                     .update(cx, |s, cx| s.set_value("", window, cx));
@@ -349,7 +355,10 @@ impl Mellon {
                     "Show values unmasked",
                     self.reveal,
                     cx,
-                    |t| t.reveal = !t.reveal,
+                    |t| {
+                        t.reveal = !t.reveal;
+                        t.flipped.clear();
+                    },
                 )
                 .icon(if self.reveal {
                     IconName::Eye
@@ -588,14 +597,15 @@ impl Mellon {
                         .font_weight(FontWeight::SEMIBOLD)
                         .child(entry.key.clone())
                 };
+                let shown = self.reveal != self.flipped.contains(&index);
                 let value = match field {
                     Some(field) => Input::new(&field).small().into_any_element(),
                     None => div()
                         .truncate()
                         .font_family(MONO)
                         .text_size(px(12.))
-                        .text_color(rgb(if self.reveal { pal().text } else { pal().muted }))
-                        .child(if self.reveal {
+                        .text_color(rgb(if shown { pal().text } else { pal().muted }))
+                        .child(if shown {
                             entry.value.clone()
                         } else {
                             mask(&entry.value)
@@ -640,6 +650,28 @@ impl Mellon {
                         )
                     })
                     .child(div().flex_1().min_w_0().child(value))
+                    .child(
+                        Button::new(("reveal", index))
+                            .icon(if shown {
+                                IconName::Eye
+                            } else {
+                                IconName::EyeOff
+                            })
+                            .ghost()
+                            .xsmall()
+                            .tooltip(if shown {
+                                "Hide this value"
+                            } else {
+                                "Show this value"
+                            })
+                            .on_click(cx.listener(move |this, _, _, cx| {
+                                cx.stop_propagation();
+                                if !this.flipped.remove(&index) {
+                                    this.flipped.insert(index);
+                                }
+                                cx.notify();
+                            })),
+                    )
                     .child(
                         Button::new(("copy", index))
                             .icon(if self.copied == Some(index) {

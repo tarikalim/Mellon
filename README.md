@@ -18,7 +18,8 @@ exactly as they are, and the app only reads and writes those files.
 - **Click a row** to copy its value. Each row also has a copy button and an open button, which
   opens the file in the Mac's default
   text editor (`open -t`).
-- **Reveal** unmasks values. **Values** also searches inside them.
+- **Reveal** unmasks every value; the eye on a row shows or hides just that one. **Values**
+  makes the search look inside values too, not only keys and folders.
 - **Commented** also lists keys commented out in the files (`# KEY=VALUE`), shown dimmed with a
   `#`. Editing one keeps it commented.
 - **Edit** turns on inline editing: click a row, type, and press Enter or click away. Only that
