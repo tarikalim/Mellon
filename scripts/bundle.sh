@@ -41,5 +41,7 @@ cat > "$app/Contents/Info.plist" <<PLIST
 </dict></plist>
 PLIST
 codesign --force --deep -s - "$app"
+# Updated in place, the bundle keeps its date and macOS keeps the cached icon; a new date refreshes it.
+touch "$app"
 [ -n "$1" ] || { "$lsregister" -f "$app"; mdimport "$app"; }
 echo "installed: $app"
